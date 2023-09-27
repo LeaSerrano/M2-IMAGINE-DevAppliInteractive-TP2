@@ -39,6 +39,8 @@ void Mesh::recomputeNormals () {
         V[i].n.normalize ();
 }
 
+
+
 void Mesh::compute_skinning_weights( Skeleton & skeleton ) {
     //---------------------------------------------------//
     //---------------------------------------------------//
@@ -53,7 +55,57 @@ void Mesh::compute_skinning_weights( Skeleton & skeleton ) {
     //---------------------------------------------------//
     //---------------------------------------------------//
     //---------------------------------------------------//
+
+    for( unsigned int i = 0 ; i < V.size() ; ++i ) {
+        MeshVertex & vertex = V[i];
+
+        Vec3 vi = vertex.p;
+
+        vertex.w.resize(skeleton.bones.size());
+        float poids_total = 0.0;
+
+        for (int iBone = 0; iBone < skeleton.bones.size(); iBone++) {
+            Bone bone = skeleton.bones[iBone]; //récupère le squelette
+            int art_0 = bone.joints[0]; //l'indice du premier point de l'os
+            int art_1 = bone.joints[1]; //l'indice du second point de l'os
+
+            Vec3 A = skeleton.articulations[art_0].p; //articulation 1
+            Vec3 B = skeleton.articulations[art_1].p; //articulation 2
+
+            Vec3 AB = B - A;
+            Vec3 AC = vi - A;
+
+            float distance_AC_prime = (Vec3::dot(AB, AC))/AB.length(); //projection de AC sur AB
+
+            if (distance_AC_prime < 0) {
+                distance_AC_prime = 0;
+            }
+            else if (distance_AC_prime > AB.length()) {
+                distance_AC_prime = AB.length();
+            }
+
+            Vec3 u = AB/AB.length();
+            float dist_ij = 0;
+
+            Vec3 C_prime = A + distance_AC_prime * u; //position du point de l'os le plus proche de C
+            dist_ij = (vi-C_prime).length();
+            
+            float w_ij = std::pow(1.0/dist_ij, 2);
+
+            poids_total += w_ij;
+            vertex.w[iBone] = w_ij;
+
+        }
+
+        //normalisation
+        for (int iBone = 0; iBone < skeleton.bones.size(); iBone++)  {
+            vertex.w[iBone] /= poids_total;
+        }
+
+    }
+
 }
+
 
 void Mesh::draw( int displayedBone ) const {
 
@@ -90,8 +142,16 @@ void Mesh::drawTransformedMesh( SkeletonTransformation & transfo ) const {
         // Indications:
         // you should use the skinning weights to blend the transformations of the vertex position by the bones.
 
-        new_positions[ i ] = p;
-        new_normals[ i ] = n;
+        new_positions[ i ] = Vec3(0, 0, 0);
+        new_normals[ i ] = Vec3(0, 0, 0);
+
+        for (int j = 0; j < transfo.bone_transformations.size(); j++) {
+            float w_ij = V[i].w[j];
+            Mat3 rotation = transfo.bone_transformations[j].world_space_rotation;
+            Vec3 translation = transfo.bone_transformations[j].world_space_translation;
+            new_positions[i] += w_ij * (rotation * p + translation);
+            new_normals[i] += w_ij * (rotation * n + translation);
+        }
     }
     //---------------------------------------------------//
     //---------------------------------------------------//
