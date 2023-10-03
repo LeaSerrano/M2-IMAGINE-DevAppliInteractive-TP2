@@ -134,7 +134,7 @@ void display () {
 void moveTargetArticulationBy( Vec3 translation ) {
     if( targetArticulation > -1  &&  targetArticulation < skeleton.articulations.size() ) {
         Vec3 newPos = skeletonTransfoIK.articulations_transformed_position[ targetArticulation ] + translation;
-        skeleton.updateIKChain( skeletonTransfoIK, targetArticulation , newPos );
+        skeleton.updateIKChain( skeletonTransfoIK, targetArticulation , newPos);
     }
 }
 

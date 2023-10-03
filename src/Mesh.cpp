@@ -90,7 +90,7 @@ void Mesh::compute_skinning_weights( Skeleton & skeleton ) {
             Vec3 C_prime = A + distance_AC_prime * u; //position du point de l'os le plus proche de C
             dist_ij = (vi-C_prime).length();
             
-            float w_ij = std::pow(1.0/dist_ij, 2);
+            float w_ij = std::pow(1.0/dist_ij, 5);
 
             poids_total += w_ij;
             vertex.w[iBone] = w_ij;
@@ -105,6 +105,8 @@ void Mesh::compute_skinning_weights( Skeleton & skeleton ) {
     }
 
 }
+
+
 
 
 void Mesh::draw( int displayedBone ) const {
@@ -134,13 +136,12 @@ void Mesh::drawTransformedMesh( SkeletonTransformation & transfo ) const {
 
     //---------------------------------------------------//
     //---------------------------------------------------//
-    // code to change :
+    // Indications:
+    // you should use the skinning weights to blend the transformations of the vertex position by the bones.
+
     for( unsigned int i = 0 ; i < V.size() ; ++i ) {
         Vec3 p = V[i].p;
         Vec3 n = V[i].n;
-
-        // Indications:
-        // you should use the skinning weights to blend the transformations of the vertex position by the bones.
 
         new_positions[ i ] = Vec3(0, 0, 0);
         new_normals[ i ] = Vec3(0, 0, 0);
